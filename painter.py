@@ -20,7 +20,7 @@ drawColor = (255, 0, 255)
 
 brush_thickness = 5
 eraser_thickness = 20
-smoothening = 5
+smoothening = 7
 
 # Colors
 colors = [
@@ -32,7 +32,7 @@ colors = [
 ]
 labels = ["Pink", "Blue", "Green", "Red", "Eraser"]
 
-points = []  # for shape detection
+points = []
 
 def fingers_up(lmList):
     fingers = []
@@ -54,7 +54,7 @@ while True:
     success, img = cap.read()
     img = cv2.flip(img, 1)
 
-    # Palette
+    # Draw palette
     for i, color in enumerate(colors):
         x1 = i * 128
         x2 = (i + 1) * 128
@@ -130,7 +130,8 @@ while True:
 
                     thickness = eraser_thickness if drawColor == (0,0,0) else brush_thickness
 
-                    # Circular brush
+                    # 🔥 Smooth continuous stroke
+                    cv2.line(canvas, (xp, yp), (x1, y1), drawColor, thickness * 2)
                     cv2.circle(canvas, (x1, y1), thickness, drawColor, cv2.FILLED)
 
                     points.append((x1, y1))
@@ -139,7 +140,7 @@ while True:
 
             mpDraw.draw_landmarks(img, handLms, mpHands.HAND_CONNECTIONS)
 
-    # Merge
+    # Merge canvas
     imgGray = cv2.cvtColor(canvas, cv2.COLOR_BGR2GRAY)
     _, imgInv = cv2.threshold(imgGray, 50,255, cv2.THRESH_BINARY_INV)
     imgInv = cv2.cvtColor(imgInv, cv2.COLOR_GRAY2BGR)
