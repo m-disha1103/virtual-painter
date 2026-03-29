@@ -1,24 +1,41 @@
 import cv2
 import mediapipe as mp
 import numpy as np
+import time
 
+# Camera
 cap = cv2.VideoCapture(0)
 
+# MediaPipe
 mpHands = mp.solutions.hands
 hands = mpHands.Hands(max_num_hands=1)
 mpDraw = mp.solutions.drawing_utils
 
+# Canvas
 canvas = np.zeros((480, 640, 3), np.uint8)
 
+# Variables
 xp, yp = 0, 0
 drawColor = (255, 0, 255)
 
-# Color buttons
-colors = [(255, 0, 255), (255, 0, 0), (0, 255, 0), (0, 0, 0)]
+brush_thickness = 5
+eraser_thickness = 20
+smoothening = 5
+
+# Colors
+colors = [
+    (255, 0, 255),
+    (255, 0, 0),
+    (0, 255, 0),
+    (0, 0, 255),
+    (0, 0, 0)
+]
+labels = ["Pink", "Blue", "Green", "Red", "Eraser"]
+
+points = []  # for shape detection
 
 def fingers_up(lmList):
     fingers = []
-
     if lmList[4][0] > lmList[3][0]:
         fingers.append(1)
     else:
@@ -37,9 +54,24 @@ while True:
     success, img = cap.read()
     img = cv2.flip(img, 1)
 
-    # Draw color palette UI
+    # Palette
     for i, color in enumerate(colors):
-        cv2.rectangle(img, (i*160, 0), ((i+1)*160, 80), color, cv2.FILLED)
+        x1 = i * 128
+        x2 = (i + 1) * 128
+        cv2.rectangle(img, (x1, 0), (x2, 80), color, cv2.FILLED)
+        cv2.putText(img, labels[i], (x1 + 10, 50),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255,255,255), 2)
+
+    # Clear button
+    cv2.rectangle(img, (0, 400), (120, 480), (50,50,50), cv2.FILLED)
+    cv2.putText(img, "CLEAR", (10, 450),
+                cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255,255,255), 2)
+
+    # Show sizes
+    cv2.putText(img, f"Brush: {brush_thickness}", (350, 420),
+                cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255,255,255), 2)
+    cv2.putText(img, f"Eraser: {eraser_thickness}", (350, 460),
+                cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255,255,255), 2)
 
     imgRGB = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
     results = hands.process(imgRGB)
@@ -50,7 +82,7 @@ while True:
 
             for id, lm in enumerate(handLms.landmark):
                 h, w, c = img.shape
-                cx, cy = int(lm.x * w), int(lm.y * h)
+                cx, cy = int(lm.x*w), int(lm.y*h)
                 lmList.append((cx, cy))
 
             if lmList:
@@ -63,35 +95,81 @@ while True:
                 if fingers[1] and fingers[2]:
                     xp, yp = 0, 0
 
-                    # Check if selecting color
                     if y1 < 80:
-                        drawColor = colors[x1 // 160]
+                        drawColor = colors[x1 // 128]
 
-                    cv2.rectangle(img, (x1, y1-20), (x2, y2+20), drawColor, cv2.FILLED)
+                    if 0 < x1 < 120 and 400 < y1 < 480:
+                        canvas = np.zeros((480,640,3), np.uint8)
+
+                    # Shape detection
+                    if len(points) > 10:
+                        pts = np.array(points, np.int32)
+                        pts = pts.reshape((-1,1,2))
+
+                        approx = cv2.approxPolyDP(
+                            pts, 0.02*cv2.arcLength(pts, True), True)
+
+                        if len(approx) == 3:
+                            print("Triangle")
+                        elif len(approx) == 4:
+                            print("Rectangle")
+                        elif len(approx) > 6:
+                            print("Circle")
+
+                    points = []
 
                 # Drawing mode
                 elif fingers[1] and not fingers[2]:
-                    cv2.circle(img, (x1, y1), 10, drawColor, cv2.FILLED)
+
+                    # Smooth movement
+                    x1 = xp + (x1 - xp) // smoothening
+                    y1 = yp + (y1 - yp) // smoothening
 
                     if xp == 0 and yp == 0:
                         xp, yp = x1, y1
 
-                    thickness = 20 if drawColor == (0, 0, 0) else 5
-                    cv2.line(canvas, (xp, yp), (x1, y1), drawColor, thickness)
+                    thickness = eraser_thickness if drawColor == (0,0,0) else brush_thickness
+
+                    # Circular brush
+                    cv2.circle(canvas, (x1, y1), thickness, drawColor, cv2.FILLED)
+
+                    points.append((x1, y1))
+
                     xp, yp = x1, y1
 
             mpDraw.draw_landmarks(img, handLms, mpHands.HAND_CONNECTIONS)
 
+    # Merge
     imgGray = cv2.cvtColor(canvas, cv2.COLOR_BGR2GRAY)
-    _, imgInv = cv2.threshold(imgGray, 50, 255, cv2.THRESH_BINARY_INV)
+    _, imgInv = cv2.threshold(imgGray, 50,255, cv2.THRESH_BINARY_INV)
     imgInv = cv2.cvtColor(imgInv, cv2.COLOR_GRAY2BGR)
 
     img = cv2.bitwise_and(img, imgInv)
     img = cv2.bitwise_or(img, canvas)
 
-    cv2.imshow("Virtual Painter", img)
+    cv2.imshow("AI Virtual Painter", img)
 
-    if cv2.waitKey(1) & 0xFF == 27:
+    key = cv2.waitKey(1)
+
+    # Save
+    if key == ord('s'):
+        filename = f"drawing_{int(time.time())}.png"
+        cv2.imwrite(filename, canvas)
+        print("Saved:", filename)
+
+    # Brush size
+    if key == ord(']'):
+        brush_thickness += 2
+    if key == ord('['):
+        brush_thickness = max(1, brush_thickness - 2)
+
+    # Eraser size
+    if key == ord('+'):
+        eraser_thickness += 5
+    if key == ord('-'):
+        eraser_thickness = max(5, eraser_thickness - 5)
+
+    if key == 27:
         break
 
 cap.release()
