@@ -1,0 +1,124 @@
+# AI Virtual Painter
+
+**Hand Gesture-Based Drawing Application using Computer Vision**
+
+---
+
+## Overview
+
+AI Virtual Painter is a real-time computer vision application that enables users to draw on a digital canvas using hand gestures captured through a webcam. The system tracks finger movements and translates them into smooth drawing strokes, eliminating the need for traditional input devices such as a mouse or stylus.
+
+---
+
+## Features
+
+* Real-time hand tracking
+* Gesture-based drawing (index finger)
+* Mode switching using hand gestures (drawing and selection)
+* Interactive color palette
+* Adjustable brush size
+* Adjustable eraser size
+* Circular brush rendering for smooth strokes
+* Canvas clearing functionality
+* Save drawings as image files
+* Basic shape detection (circle, rectangle, triangle)
+
+---
+
+## Technologies Used
+
+* Python
+* OpenCV (image processing and rendering)
+* MediaPipe (hand landmark detection)
+* NumPy (numerical operations)
+
+---
+
+## Installation
+
+### 1. Clone the Repository
+
+```bash
+git clone https://github.com/your-username/ai-virtual-painter.git
+cd ai-virtual-painter
+```
+
+### 2. Install Dependencies
+
+```bash
+pip install opencv-python mediapipe numpy
+```
+
+---
+
+## Usage
+
+Run the application:
+
+```bash
+python painter.py
+```
+
+---
+
+## Controls
+
+| Input                 | Action                          |
+| --------------------- | ------------------------------- |
+| Index finger          | Draw                            |
+| Index + Middle finger | Selection mode                  |
+| Top palette area      | Change color                    |
+| Black color           | Activate eraser                 |
+| `[` / `]`             | Decrease / Increase brush size  |
+| `-` / `+`             | Decrease / Increase eraser size |
+| Clear button          | Reset canvas                    |
+| `S` key               | Save drawing                    |
+| `ESC`                 | Exit application                |
+
+---
+
+## Project Structure
+
+```
+ai-virtual-painter/
+│
+├── painter.py
+├── README.md
+```
+
+---
+
+## Output
+
+* Real-time drawing interface using webcam
+* Gesture-controlled interaction
+* Saved image files stored locally
+
+---
+
+## Future Enhancements
+* Advanced shape recognition using machine learning
+* Cloud storage integration
+* Additional brush styles and effects
+
+---
+
+## Learning Outcomes
+
+* Understanding of real-time computer vision systems
+* Implementation of hand gesture recognition
+* Integration of machine learning frameworks into applications
+* Practical experience with OpenCV and MediaPipe
+
+---
+
+## License
+
+This project is intended for educational and demonstration purposes.
+
+---
+
+## Author
+
+Disha Malviya
+GitHub: https://github.com/m-disha1103
